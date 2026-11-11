@@ -102,7 +102,7 @@ class Device:
 
 def make_fleet(n: int, seed: int, start: datetime) -> list[Device]:
     # print("Making fleet")
-    print(f"n: {n}, seed: {seed}, start: {start}")
+    # print(f"n: {n}, seed: {seed}, start: {start}")
     # print([Device(f"dev-{i:05d}", seed, start) for i in range(n)])
     devices = [Device(f"dev-{i:05d}", seed, start) for i in range(n)]
     # print([repr(d) for d in devices])

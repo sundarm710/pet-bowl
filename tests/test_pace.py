@@ -24,9 +24,7 @@ def at(ms: int) -> Delivery:
     return Delivery(START + timedelta(milliseconds=ms), b"x")
 
 
-def run(
-    ds: list[Delivery], speedup: float, clk: FakeClock, **kw: Any
-) -> list[list[Delivery]]:
+def run(ds: list[Delivery], speedup: float, clk: FakeClock, **kw: Any) -> list[list[Delivery]]:
     return list(pace(ds, START, speedup, clock=clk.now, sleep=clk.sleep, **kw))
 
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -27,7 +27,7 @@ def test_different_seed_differs(tmp_path: Path) -> None:
 
 def test_clean_run_matches_the_library(tmp_path: Path) -> None:
     lines = sim(tmp_path / "a.jsonl").splitlines()
-    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    start = datetime(2026, 1, 1, tzinfo=UTC)
     expected = list(stream(make_fleet(5, 42, start), start + timedelta(hours=2)))
     assert [Event.model_validate_json(x) for x in lines] == expected
 

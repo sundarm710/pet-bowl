@@ -8,10 +8,9 @@ from petbowl.common.events import Event
 
 T0 = datetime(2026, 1, 1, tzinfo=UTC)
 
+
 def make(**kw: Any) -> Event:
-    base: dict[str, Any] = dict(
-        device_id="d1", seq=0, ts=T0, kind="weight_g", value=120.5
-    )
+    base: dict[str, Any] = dict(device_id="d1", seq=0, ts=T0, kind="weight_g", value=120.5)
     return Event(**{**base, **kw})
 
 

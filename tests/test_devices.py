@@ -52,4 +52,3 @@ def test_pets_actually_eat() -> None:
 def test_event_rate_per_device_day() -> None:
     n = len(of(run(5, 9), "dev-00002"))
     assert 4000 < n < 5200  # expect ~
-    

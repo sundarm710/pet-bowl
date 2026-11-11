@@ -16,7 +16,7 @@ DEFAULT_START = "2026-01-01T00:00:00+00:00"
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="petbowl.simulator", description="Pet-bowl telemetry simulator")
+    p = argparse.ArgumentParser(prog="petbowl.simulator", description="Petbowl telemetry simulator")
     p.add_argument("--devices", type=int, default=100)
     p.add_argument("--hours", type=float, default=24.0, help="virtual duration")
     p.add_argument("--seed", type=int, default=42)
@@ -91,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
     )
     if a.speedup > 0 and stats.max_lag_s > 1.0:
-        print("WARNING: max lag > 1s, this run did not hold its schedule (invalid for load tests)", file=sys.stderr)
+        print("WARNING: max lag > 1s, did not hold schedule (NA for load tests)", file=sys.stderr)
     return 0
 
 
