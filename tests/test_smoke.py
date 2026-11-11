@@ -6,8 +6,17 @@ from petbowl.common.events import Event
 
 def test_python_dash_m_streams_clean_jsonl_to_stdout() -> None:
     r = subprocess.run(
-        [sys.executable, "-m", "petbowl.simulator",
-         "--devices", "2", "--hours", "0.05", "--sink", "stdout"],
+        [
+            sys.executable,
+            "-m",
+            "petbowl.simulator",
+            "--devices",
+            "2",
+            "--hours",
+            "0.05",
+            "--sink",
+            "stdout",
+        ],
         capture_output=True,
         check=True,
         timeout=60,
