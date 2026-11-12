@@ -1,0 +1,5 @@
+Keep each section to three lines: Decision, Why, Consequence. Cover three decisions:
+
+event_id is device_id:seq, deterministic, and it is the idempotency key.
+ts is the device clock. A server received_at is added at ingest, and skew is expected.
+A seq gap means loss. A seq regression means the device rebooted or replayed. How will you detect each?
