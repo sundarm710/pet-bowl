@@ -8,3 +8,4 @@ test:     ; uv run pytest
 ci: lint types test
 sim:      ; uv run python -m petbowl.simulator --devices 100 --hours 24 --seed 42 --sink jsonl:out.jsonl
 baseline: ; uv run python -m petbowl.simulator --devices 1000 --hours 24 --seed 42 --sink null
+kv-bench: ; uv run python bench/kv_bench.py
