@@ -1,34 +1,8 @@
-import os
-import uuid
-from collections.abc import Iterator
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 import psycopg
 import pytest
-
-URL = os.environ.get("PETBOWL_DB_URL", "postgresql://petbowl:petbowl@127.0.0.1:5432/petbowl")
-SCHEMA_SQL = Path(__file__).parents[1] / "src/petbowl/ingest/schema.sql"
-
-
-@pytest.fixture
-def conn() -> Iterator[psycopg.Connection[Any]]:
-    try:
-        c = psycopg.connect(URL, autocommit=True, connect_timeout=3)
-    except psycopg.OperationalError:
-        if os.environ.get("CI"):
-            raise  # in CI a missing database is a failure, not a skip
-        pytest.skip("postgres not running: make db-up")
-    name = f"t_{uuid.uuid4().hex[:12]}"
-    c.execute(f"CREATE SCHEMA {name}")
-    c.execute(f"SET search_path TO {name}")
-    c.execute(SCHEMA_SQL.read_text())
-    try:
-        yield c
-    finally:
-        c.execute(f"DROP SCHEMA {name} CASCADE")
-        c.close()
 
 
 def insert(
