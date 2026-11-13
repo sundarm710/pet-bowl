@@ -6,6 +6,7 @@ import pytest
 
 from petbowl.simulator.device import make_fleet, stream
 from petbowl.simulator.faults import Delivery, FaultConfig, apply_faults
+from petbowl.simulator.http_sink import HttpSink
 from petbowl.simulator.sinks import NullSink, StreamSink, make_sink
 
 T = datetime(2026, 1, 1, tzinfo=UTC)
@@ -56,10 +57,16 @@ def test_factory_kinds() -> None:
     assert isinstance(make_sink("stdout"), StreamSink)
 
 
-@pytest.mark.parametrize("spec", ["", "null:x", "jsonl", "jsonl:", "http://x", "bogus"])
+@pytest.mark.parametrize("spec", ["", "null:x", "jsonl", "jsonl:", "ftp://x", "bogus"])
 def test_bad_spec(spec: str) -> None:
     with pytest.raises(ValueError):
         make_sink(spec)
+
+
+def test_http_spec_builds_an_http_sink() -> None:
+    sink = make_sink("http://127.0.0.1:1/v1/events")  # construction does not connect
+    assert isinstance(sink, HttpSink)
+    sink.close()
 
 
 def test_fault_payloads_never_break_line_framing() -> None:
