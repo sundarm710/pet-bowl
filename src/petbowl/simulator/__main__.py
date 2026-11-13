@@ -5,6 +5,7 @@ import argparse
 import sys
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from petbowl.simulator.device import make_fleet, stream
 from petbowl.simulator.faults import FaultConfig, apply_faults
@@ -28,6 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--offline-rate", type=float, default=0.0)
     p.add_argument("--skew-s", type=float, default=0.0)
     p.add_argument("--malformed-rate", type=float, default=0.0)
+    p.add_argument("--dead-letter", type=Path, default=None, help="JSONL of never landed items")
+    p.add_argument("--ack-log", type=Path, default=None, help="device_id:seq of delivered events")
     return p
 
 
@@ -57,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     a = p.parse_args(argv)
     start = validate(p, a)
     try:
-        sink = make_sink(a.sink)
+        sink = make_sink(a.sink, dead_letter=a.dead_letter, ack_log=a.ack_log)
     except ValueError as e:
         p.error(str(e))
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import BinaryIO, Protocol
 
 from petbowl.simulator.faults import Delivery
+from petbowl.simulator.http_sink import HttpSink
 
 
 class Sink(Protocol):
@@ -46,8 +47,10 @@ class StreamSink:
             self._out.close()
 
 
-def make_sink(spec: str) -> Sink:
+def make_sink(spec: str, *, dead_letter: Path | None = None, ack_log: Path | None = None) -> Sink:
     kind, _, arg = spec.partition(":")
+    if spec.startswith(("http://", "https://")):
+        return HttpSink(spec, dead_letter=dead_letter, ack_log=ack_log)
     if kind == "null" and not arg:
         return NullSink()
     if kind == "stdout" and not arg:
