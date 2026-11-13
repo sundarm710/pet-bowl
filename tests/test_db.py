@@ -7,7 +7,7 @@ from typing import Any
 from psycopg_pool import AsyncConnectionPool
 
 from petbowl.common.events import Event, Kind
-from petbowl.ingest.db import apply_schema, insert_events, open_pool
+from petbowl.ingest.db import PgEvents, apply_schema, insert_events, open_pool
 
 T0 = datetime(2026, 1, 1, tzinfo=UTC)
 
@@ -107,3 +107,10 @@ def test_apply_schema_is_idempotent(db_url: str, pg_schema: str) -> None:
         return await count(pool)
 
     assert run(db_url, pg_schema, work) == 0
+
+
+def test_pg_events_satisfies_the_store_contract(db_url: str, pg_schema: str) -> None:
+    async def work(pool: AsyncConnectionPool[Any]) -> list[bool]:
+        return await PgEvents(pool).insert([ev("d1", 1), ev("d1", 1)])
+
+    assert run(db_url, pg_schema, work) == [True, False]

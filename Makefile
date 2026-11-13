@@ -1,4 +1,5 @@
 .PHONY: install lint fmt types test ci sim baseline
+PORT ?= 8100
 
 install:  ; uv sync
 lint:     ; uv run ruff check . && uv run ruff format --check .
@@ -14,3 +15,4 @@ db-down: ; docker compose down
 db-psql: ; docker compose exec db psql -U petbowl
 db-schema: ; docker compose exec -T db psql -U petbowl -v ON_ERROR_STOP=1 < src/petbowl/ingest/schema.sql
 db-reset: ; docker compose down -v && docker compose up -d --wait
+serve: ; uv run uvicorn petbowl.ingest.app:app_from_env --factory --host 127.0.0.1 --port $(PORT) --workers 1

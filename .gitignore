@@ -1,1 +1,2 @@
 .venv, __pycache__, *.jsonl, .coverage, .hypothesis/
+data/

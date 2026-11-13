@@ -19,15 +19,26 @@ RETURNING device_id, seq
 """
 
 
+class PgEvents:
+    """EventStore backed by Postgres: one transaction per batch."""
+
+    def __init__(self, pool: AsyncConnectionPool[Any]) -> None:
+        self._pool = pool
+
+    async def insert(self, events: Sequence[Event]) -> list[bool]:
+        async with self._pool.connection() as conn:
+            return await insert_events(conn, events)
+
+
 async def open_pool(
-    url: str, *, schema: str | None = None, max_size: int = 4
+    url: str, *, schema: str | None = None, max_size: int = 4, timeout: float = 5.0
 ) -> AsyncConnectionPool[Any]:
     """schema pins search_path; tests use it to stay inside a throwaway schema."""
     kwargs: dict[str, Any] = {}
     if schema:
         kwargs["options"] = f"-c search_path={schema}"
     pool: AsyncConnectionPool[Any] = AsyncConnectionPool(
-        url, min_size=1, max_size=max_size, kwargs=kwargs, open=False
+        url, min_size=1, max_size=max_size, kwargs=kwargs, timeout=timeout, open=False
     )
     await pool.open(wait=True)
     return pool
