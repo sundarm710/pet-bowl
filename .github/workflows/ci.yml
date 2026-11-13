@@ -17,6 +17,20 @@ jobs:
     timeout-minutes: 10
     env:
       UV_LOCKED: "1"
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: petbowl
+          POSTGRES_PASSWORD: petbowl
+          POSTGRES_DB: petbowl
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U petbowl"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -24,3 +38,4 @@ jobs:
           enable-cache: true
       - run: uv sync
       - run: make ci
+      
