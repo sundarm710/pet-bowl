@@ -2,8 +2,8 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
-
 from helpers import line  # MATCH: import it the way test_app.py does
+
 from petbowl.ingest.queue_app import QueueSettings, create_queue_app
 from petbowl.mq import MemoryBroker, MemoryConsumer, MemoryPublisher, Message
 

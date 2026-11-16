@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Request
 from petbowl.ingest.app import IngestResponse
 from petbowl.ingest.service import ItemResult
 from petbowl.ingest.validate import validate_lines
-from petbowl.mq import PublishError, Publisher, QueueError
+from petbowl.mq import Publisher, PublishError, QueueError
 from petbowl.mq.kafka import KafkaPublisher, create_topic
 
 log = logging.getLogger("petbowl.ingest.queue_app")
@@ -86,9 +86,7 @@ def create_queue_app(settings: QueueSettings, publisher: Publisher | None = None
                 await request.app.state.publisher.publish(settings.topic, items)
             except PublishError as exc:
                 log.warning("publish failed: %s", exc)
-                raise HTTPException(
-                    503, "queue unavailable", headers={"Retry-After": "1"}
-                ) from exc
+                raise HTTPException(503, "queue unavailable", headers={"Retry-After": "1"}) from exc
 
         return IngestResponse(
             accepted=len(checked.valid),

@@ -5,8 +5,8 @@ from dataclasses import dataclass
 
 from pydantic import ValidationError
 
-from petbowl.ingest.service import ItemResult, Outcome
 from petbowl.common.events import Event
+from petbowl.ingest.service import ItemResult, Outcome
 
 
 @dataclass(frozen=True, slots=True)
