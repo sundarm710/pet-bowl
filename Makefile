@@ -16,3 +16,6 @@ db-psql: ; docker compose exec db psql -U petbowl
 db-schema: ; docker compose exec -T db psql -U petbowl -v ON_ERROR_STOP=1 < src/petbowl/ingest/schema.sql
 db-reset: ; docker compose down -v && docker compose up -d --wait
 serve: ; uv run uvicorn petbowl.ingest.app:app_from_env --factory --host 127.0.0.1 --port $(PORT) --workers 1
+kafka-up: ; docker compose up -d --wait kafka
+kafka-down: ; docker compose stop kafka
+kafka-logs: ; docker compose logs --tail 50 kafka

@@ -1,3 +1,4 @@
+import contextlib
 import os
 import uuid
 from collections.abc import Iterator
@@ -6,6 +7,7 @@ from typing import Any
 
 import psycopg
 import pytest
+from confluent_kafka.admin import AdminClient, NewTopic
 
 SCHEMA_SQL = Path(__file__).parents[1] / "src/petbowl/ingest/schema.sql"
 
@@ -42,3 +44,26 @@ def conn(db_url: str, pg_schema: str) -> Iterator[psycopg.Connection[Any]]:
         yield c
     finally:
         c.close()
+
+
+@pytest.fixture(scope="session")
+def kafka_bootstrap() -> str:
+    servers = os.environ.get("PETBOWL_KAFKA", "127.0.0.1:9092")
+    try:
+        AdminClient({"bootstrap.servers": servers}).list_topics(timeout=3)
+    except Exception as exc:
+        msg = f"no Kafka at {servers}: {exc}"
+        if os.environ.get("CI"):
+            pytest.fail(msg)
+        pytest.skip(msg)
+    return servers
+
+
+@pytest.fixture
+def topic(kafka_bootstrap: str):
+    name = f"t_{uuid.uuid4().hex[:12]}"
+    admin = AdminClient({"bootstrap.servers": kafka_bootstrap})
+    admin.create_topics([NewTopic(name, num_partitions=3, replication_factor=1)])[name].result(10)
+    yield name
+    with contextlib.suppress(Exception):
+        admin.delete_topics([name])[name].result(10)
