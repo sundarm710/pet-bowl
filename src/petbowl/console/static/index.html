@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>petbowl console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>petbowl console</h1>
+  <span id="conn" class="pill">connecting…</span>
+  <span id="strip"></span>
+</header>
+<main>
+  <section id="graph-wrap"><svg id="graph"></svg></section>
+  <aside id="drawer">
+    <div id="drawer-title">Select a node</div>
+    <div id="drawer-body" class="muted">Click a node in the pipeline to drill in.</div>
+    <h3>Event tail <label><input type="checkbox" id="filter-node" checked> selected node only</label></h3>
+    <ul id="tail"></ul>
+  </aside>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
