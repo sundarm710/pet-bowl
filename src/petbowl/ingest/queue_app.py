@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI, HTTPException, Request
 
-from petbowl.ingest.app import IngestResponse
+from petbowl.ingest.app import IngestResponse, Reject
 from petbowl.ingest.service import ItemResult
 from petbowl.ingest.validate import validate_lines
 from petbowl.mq import Publisher, PublishError, QueueError
@@ -35,9 +35,8 @@ def from_env() -> QueueSettings:
     )
 
 
-def _reject(r: ItemResult) -> dict[str, object]:
-    # MATCH: same shape as the rejects your stage 3 handler returns
-    return {"index": r.index, "reason": r.detail}
+def _reject(r: ItemResult) -> Reject:
+    return Reject(index=r.index, reason=r.detail)
 
 
 def create_queue_app(settings: QueueSettings, publisher: Publisher | None = None) -> FastAPI:
