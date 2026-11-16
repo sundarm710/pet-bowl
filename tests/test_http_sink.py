@@ -6,7 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from petbowl.simulator.http_sink import HttpSink, HttpTransport, Response, SinkError, frame
+from petbowl.simulator.http_sink import (
+    HttpSink,
+    HttpTransport,
+    Response,
+    SinkError,
+    frame,
+    percentile,
+)
 
 
 class Script:
@@ -187,3 +194,9 @@ def test_real_transport_round_trip_and_retry_after() -> None:
         transport.close()
         server.shutdown()
         server.server_close()
+
+
+def test_percentile_is_nearest_rank() -> None:
+    assert percentile([], 0.5) == 0.0
+    assert percentile([7.0], 0.99) == 7.0
+    assert percentile([float(i) for i in range(100)], 0.99) == 99.0

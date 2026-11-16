@@ -6,7 +6,7 @@ import random
 import sys
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -74,12 +74,20 @@ class HttpStats:
     rejected: int = 0
     retries: int = 0
     dropped: int = 0  # items given up on: delivery failed, never reached the server's verdict
+    latencies_ms: list[float] = field(default_factory=list)  # one per 200 response
 
 
 def frame(item: bytes) -> bytes:
     """One item is one NDJSON line. A stray newline would shift every later reject index."""
     cleaned = item.replace(b"\r", b" ").replace(b"\n", b" ")
     return cleaned if cleaned.strip() else b"{}"
+
+
+def percentile(sorted_values: Sequence[float], q: float) -> float:
+    """Nearest-rank, same convention as the KV benchmark."""
+    if not sorted_values:
+        return 0.0
+    return sorted_values[min(len(sorted_values) - 1, int(q * len(sorted_values)))]
 
 
 class HttpSink:
@@ -106,9 +114,12 @@ class HttpSink:
         self._cap = backoff_cap
         self._sleep = sleep
         self._rng = rng or random.Random()
+        self._t0: float | None = None
 
     def send_payloads(self, payloads: Sequence[bytes]) -> None:
         items = [frame(b) for b in payloads]
+        if self._t0 is None:
+            self._t0 = time.perf_counter()
         if items:
             self.stats.batches += 1
             self._send(items)
@@ -120,22 +131,28 @@ class HttpSink:
         if isinstance(self._transport, HttpTransport):
             self._transport.close()
         s = self.stats
+        elapsed = time.perf_counter() - self._t0 if self._t0 is not None else 0.0
+        rate = s.items / elapsed if elapsed > 0 else 0.0
+        lat = sorted(s.latencies_ms)
         print(
             f"http sink: {s.items} items, {s.batches} batches, {s.requests} requests, "
             f"{s.accepted} accepted, {s.duplicates} duplicate, {s.rejected} rejected, "
-            f"{s.retries} retries, {s.dropped} dropped",
+            f"{s.retries} retries, {s.dropped} dropped, {rate:,.0f} items/s, "
+            f"request p50 {percentile(lat, 0.5):.1f} ms, p99 {percentile(lat, 0.99):.1f} ms",
             file=sys.stderr,
         )
 
     def _send(self, items: list[bytes]) -> None:
         for attempt in range(self._max_attempts):
             try:
+                t0 = time.perf_counter()
                 resp = self._transport(b"\n".join(items))
             except OSError:
                 self._backoff(attempt, None)
                 continue
             self.stats.requests += 1
             if resp.status == 200:
+                self.stats.latencies_ms.append((time.perf_counter() - t0) * 1000)
                 self._acked(items, resp.body)
                 return
             if resp.status == 413 and len(items) > 1:

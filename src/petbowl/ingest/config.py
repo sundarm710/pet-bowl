@@ -25,4 +25,5 @@ class Settings:
             kv_path=Path(os.environ.get("PETBOWL_KV_PATH", "data/state.wal")),
             kv_policy=os.environ.get("PETBOWL_KV_POLICY", "interval"),
             kv_interval_s=float(os.environ.get("PETBOWL_KV_INTERVAL_S", "0.1")),
+            schema=os.environ.get("PETBOWL_DB_SCHEMA"),
         )

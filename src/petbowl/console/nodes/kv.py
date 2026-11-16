@@ -16,6 +16,7 @@ from petbowl.console.nodes.ingest import IngestNode, _get
 
 MAX_WATCH = 500
 BATCH = 50
+MISS_LIMIT = 10  # 404s in a row before we stop asking about a device until it is acked again
 
 
 class KvNode(BaseNode):
@@ -29,6 +30,7 @@ class KvNode(BaseNode):
         self.state: dict[str, dict[str, Any]] = {}  # device -> {max_seq, max_ts, seen}
         self.errors = 0
         self.polls = 0
+        self.misses: dict[str, int] = {}
         self._order: list[str] = []
         self._cursor = 0
         self._task: asyncio.Task[None] | None = None
@@ -53,18 +55,28 @@ class KvNode(BaseNode):
                 if len(self.expected) >= MAX_WATCH:
                     continue
                 self._order.append(dev)
+            if seq > self.expected.get(dev, -1):
+                self.misses.pop(dev, None)  # new ack: worth asking again
             self.expected[dev] = max(self.expected.get(dev, -1), seq)
+
+    def _pending(self) -> list[str]:
+        """Devices acked at a higher seq than KV has shown us, and not given up on."""
+        return [
+            d
+            for d in self._order
+            if self.state.get(d, {}).get("max_seq", -1) < self.expected[d]
+            and self.misses.get(d, 0) < MISS_LIMIT
+        ]
 
     async def _loop(self) -> None:
         while True:
             await asyncio.sleep(self.interval)
-            if not self._order:
+            pending = self._pending()  # idle (nothing pending) means zero requests
+            if not pending:
                 continue
-            devs = [
-                self._order[(self._cursor + i) % len(self._order)]
-                for i in range(min(BATCH, len(self._order)))
-            ]
-            self._cursor = (self._cursor + len(devs)) % len(self._order)
+            self._cursor %= len(pending)
+            devs = (pending[self._cursor :] + pending[: self._cursor])[:BATCH]
+            self._cursor += len(devs)
             await asyncio.gather(*(self._poll(d) for d in devs))
 
     async def _poll(self, dev: str) -> None:
@@ -74,12 +86,16 @@ class KvNode(BaseNode):
         except OSError:
             self.errors += 1
             return
+        if status == 404:
+            self.misses[dev] = self.misses.get(dev, 0) + 1
+            return
         if status != 200:
             return
         try:
             st = json.loads(body)
         except ValueError:
             return
+        self.misses.pop(dev, None)
         prev = self.state.get(dev, {}).get("max_seq", -1)
         if st["max_seq"] != prev:
             self.state[dev] = {
@@ -106,6 +122,7 @@ class KvNode(BaseNode):
             "watched": len(self.expected),
             "devices_with_state": len(self.state),
             "behind": behind,
+            "gave_up": sum(1 for m in self.misses.values() if m >= MISS_LIMIT),
             "poll_errors": self.errors,
             "devices": [{"device_id": d, "expected": self.expected.get(d), **s} for d, s in recent],
         }

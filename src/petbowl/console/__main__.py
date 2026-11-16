@@ -40,7 +40,13 @@ def main(argv: list[str] | None = None) -> int:
         Path(a.ack_log) if a.ack_log else None,
         Path(a.dead_letter) if a.dead_letter else None,
     )
-    uvicorn.run(create_console_app(nodes, edges), host=a.host, port=a.port, log_level="warning")
+    uvicorn.run(
+        create_console_app(nodes, edges),
+        host=a.host,
+        port=a.port,
+        log_level="warning",
+        timeout_graceful_shutdown=2,  # open SSE streams must not block Ctrl-C
+    )
     return 0
 
 

@@ -7,7 +7,7 @@ export default {
   },
   update(el, node) {
     const s = node.snapshot, q = el.querySelector('#q').value.trim();
-    el.querySelector('#c').innerHTML = kv({ watched: s.watched, 'with state': s.devices_with_state, behind: s.behind, 'poll errors': s.poll_errors });
+    el.querySelector('#c').innerHTML = kv({ watched: s.watched, 'with state': s.devices_with_state, behind: s.behind, 'gave up (404)': s.gave_up, 'poll errors': s.poll_errors });
     const rows = s.devices.filter(d => d.device_id.includes(q));
     el.querySelector('#t').innerHTML = `<table><tr><th>device</th><th>max_seq</th><th>acked</th><th></th></tr>${rows.map(d =>
       `<tr><td>${esc(d.device_id)}</td><td>${d.max_seq}</td><td>${d.expected}</td><td class="${d.max_seq >= d.expected ? 'ok' : 'warn'}">${d.max_seq >= d.expected ? 'landed' : 'pending'}</td></tr>`).join('')}</table>`;

@@ -161,3 +161,35 @@ def test_kv_and_ingest_observe_log_events() -> None:
     assert kv.expected == {"d1": 3}
     assert ingest.via_logs == {"acked": 4, "dead_lettered": 2}
     assert ingest.reject_reasons == {"x": 2}
+
+
+def test_kv_stops_polling_landed_and_missing_devices(monkeypatch: pytest.MonkeyPatch) -> None:
+    from petbowl.console.nodes.kv import MISS_LIMIT, KvNode
+
+    calls: list[str] = []
+
+    def fake_get(url: str, t: float) -> tuple[int, bytes]:
+        calls.append(url)
+        if "d-missing" in url:  # e.g. WAL wiped: ingest has no state for it
+            return 404, b""
+        return 200, json.dumps({"max_seq": 4, "max_ts": "2026-01-01T00:00:00Z"}).encode()
+
+    monkeypatch.setattr("petbowl.console.nodes.kv._get", fake_get)
+
+    async def run() -> KvNode:
+        bus = Bus()
+        bus.bind(asyncio.get_running_loop())
+        kv = KvNode(IngestNode("http://up:1"), interval_s=0.005)
+        await kv.start(bus)
+        bus.emit("i", "ingest", "batch.ack", status=200, devices={"d-ok": 4, "d-missing": 9})
+        await asyncio.sleep(0.4)
+        n = len(calls)
+        await asyncio.sleep(0.2)
+        assert len(calls) == n  # idle: no polling at all
+        await kv.stop()
+        return kv
+
+    kv = asyncio.run(run())
+    assert sum("d-ok" in c for c in calls) == 1  # landed -> never asked again
+    assert sum("d-missing" in c for c in calls) == MISS_LIMIT
+    assert kv.snapshot()["gave_up"] == 1
