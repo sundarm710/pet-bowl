@@ -17,6 +17,8 @@ main{flex:1;display:flex;min-height:0}
 .h-ok .dot,.h-running .dot{fill:var(--ok)}.h-idle .dot,.h-unknown .dot{fill:var(--mut)}.h-down .dot,.h-failed .dot{fill:var(--bad)}
 .edge{stroke:var(--line);stroke-width:2;fill:none}.edge.pulse{stroke:var(--run);stroke-width:3;transition:none}
 .edge{transition:stroke .6s,stroke-width .6s}
+.edge.planned{stroke-dasharray:6 5;opacity:.55}
+.spark{width:100%;height:36px;display:block;margin:6px 0}.spark polyline{fill:none;stroke:var(--run);stroke-width:1.5}
 .edge-label{fill:var(--mut);font-size:10px}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px}.kv b{color:var(--mut);font-weight:400}
 table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}

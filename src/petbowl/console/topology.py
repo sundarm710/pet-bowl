@@ -13,6 +13,7 @@ class Edge:
     src: str
     dst: str
     label: str = ""
+    planned: bool = False  # drawn dashed: a hop that is designed but not built yet
 
 
 def describe(nodes: list[NodePlugin], edges: list[Edge]) -> dict[str, Any]:
@@ -31,5 +32,7 @@ def describe(nodes: list[NodePlugin], edges: list[Edge]) -> dict[str, Any]:
             }
             for n in nodes
         ],
-        "edges": [{"src": e.src, "dst": e.dst, "label": e.label} for e in edges],
+        "edges": [
+            {"src": e.src, "dst": e.dst, "label": e.label, "planned": e.planned} for e in edges
+        ],
     }

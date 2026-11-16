@@ -1,5 +1,6 @@
 .PHONY: install lint fmt types test ci sim baseline
 PORT ?= 8100
+WORKERS ?= 1
 
 install:  ; uv sync
 lint:     ; uv run ruff check . && uv run ruff format --check .
@@ -19,3 +20,4 @@ serve: ; uv run uvicorn petbowl.ingest.app:app_from_env --factory --host 127.0.0
 kafka-up: ; docker compose up -d --wait kafka
 kafka-down: ; docker compose stop kafka
 kafka-logs: ; docker compose logs --tail 50 kafka
+serve-queue: ; uv run uvicorn petbowl.ingest.queue_app:app_from_env --factory --host 127.0.0.1 --port $(PORT) --workers $(WORKERS)

@@ -32,6 +32,14 @@ def main(argv: list[str] | None = None) -> int:
         default="/tmp/dead.jsonl",
         help="simulator --dead-letter file to tail ('' to disable)",
     )
+    p.add_argument(
+        "--mode",
+        choices=["direct", "queue"],
+        default="direct",
+        help="direct: ingest.app (Postgres+KV). queue: ingest.queue_app (Kafka)",
+    )
+    p.add_argument("--kafka", default=os.environ.get("PETBOWL_KAFKA", "127.0.0.1:9092"))
+    p.add_argument("--topic", default=os.environ.get("PETBOWL_TOPIC", "petbowl.events"))
     a = p.parse_args(argv)
     nodes, edges = default_pipeline(
         a.ingest,
@@ -39,6 +47,9 @@ def main(argv: list[str] | None = None) -> int:
         f"http://{a.host}:{a.port}",
         Path(a.ack_log) if a.ack_log else None,
         Path(a.dead_letter) if a.dead_letter else None,
+        mode=a.mode,
+        kafka=a.kafka,
+        topic=a.topic,
     )
     uvicorn.run(
         create_console_app(nodes, edges),

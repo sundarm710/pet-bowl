@@ -22,8 +22,16 @@ MISS_LIMIT = 10  # 404s in a row before we stop asking about a device until it i
 class KvNode(BaseNode):
     type = "kv"
 
-    def __init__(self, ingest: IngestNode, node_id: str = "kv", interval_s: float = 0.5) -> None:
+    def __init__(
+        self,
+        ingest: IngestNode,
+        node_id: str = "kv",
+        interval_s: float = 0.5,
+        *,
+        enabled: bool = True,
+    ) -> None:
         super().__init__(node_id, "KV state")
+        self.enabled = enabled  # off when ingest has no state route (queue mode)
         self.ingest = ingest
         self.interval = interval_s
         self.expected: dict[str, int] = {}  # device -> highest acked seq
@@ -45,6 +53,8 @@ class KvNode(BaseNode):
             self._task.cancel()
 
     def _observe(self, ev: TraceEvent) -> None:
+        if not self.enabled:
+            return
         if ev.kind == "batch.ack":
             if ev.data.get("status") != 200:
                 return
@@ -118,7 +128,13 @@ class KvNode(BaseNode):
         )
         recent = sorted(self.state.items(), key=lambda kv: -kv[1]["seen"])[:50]
         return {
-            "health": "ok" if self.errors == 0 or self.polls > self.errors else "down",
+            "health": (
+                "idle"
+                if not self.enabled
+                else "ok"
+                if self.errors == 0 or self.polls > self.errors
+                else "down"
+            ),
             "watched": len(self.expected),
             "devices_with_state": len(self.state),
             "behind": behind,

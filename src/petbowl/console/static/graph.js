@@ -34,7 +34,7 @@ export class Graph {
     this.edgeEls = topo.edges.map(e => {
       const a = pos[e.src], b = pos[e.dst];
       const x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2, mx = (x1 + x2) / 2;
-      const p = el('path', { class: 'edge', d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}` }, this.svg);
+      const p = el('path', { class: e.planned ? 'edge planned' : 'edge', d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}` }, this.svg);
       const t = el('text', { class: 'edge-label', x: mx, y: (y1 + y2) / 2 - 6, 'text-anchor': 'middle' }, this.svg);
       t.textContent = e.label;
       return { e, p };

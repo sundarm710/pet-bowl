@@ -30,11 +30,30 @@ def default_pipeline(
     console_url: str,
     ack_log: Path | None = None,
     dead_letter: Path | None = None,
+    *,
+    mode: str = "direct",
+    kafka: str = "127.0.0.1:9092",
+    topic: str = "petbowl.events",
 ) -> tuple[list[NodePlugin], list[Edge]]:
+    """`direct`: ingest writes Postgres + KV itself (ingest.app).
+    `queue`: ingest only validates and publishes to Kafka (ingest.queue_app); storage hangs
+    off Kafka via consumers, which are not built yet, so those hops are drawn as planned.
+    """
     sim = SimulatorNode(f"{console_url}/tap/ingest", ack_log=ack_log, dead_letter=dead_letter)
     ingest = IngestNode(ingest_url)
-    kv = KvNode(ingest)
     pg = PostgresNode(db_url)
+    if mode == "queue":
+        from petbowl.console.nodes.kafka import KafkaNode  # only needed in queue mode
+
+        kv = KvNode(ingest, enabled=False)  # the queue ingest has no state route to poll
+        broker = KafkaNode(kafka, topic)
+        return [sim, ingest, broker, kv, pg], [
+            Edge("simulator", "ingest", "NDJSON"),
+            Edge("ingest", "kafka", "publish"),
+            Edge("kafka", "postgres", "consumer (planned)", planned=True),
+            Edge("kafka", "kv", "consumer (planned)", planned=True),
+        ]
+    kv = KvNode(ingest)
     nodes: list[NodePlugin] = [sim, ingest, kv, pg]
     edges = [
         Edge("simulator", "ingest", "NDJSON"),

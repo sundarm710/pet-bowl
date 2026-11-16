@@ -53,7 +53,9 @@ function renderTail() {
     const d = e.data;
     const brief = d.items != null ? `${d.items} items`
       : d.status != null ? `${d.status} ${JSON.stringify(d.ack || {})}`
-      : d.count != null ? `${d.count} ${ev.kind === 'log.dead' ? 'dead-lettered' : 'acked'}`
+      : d.count != null ? `${d.count} ${e.kind === 'log.dead' ? 'dead-lettered' : 'acked'}`
+      : d.delta != null ? `+${d.delta} msgs`
+      : d.lag != null ? `${d.group} lag ${d.lag}`
       : d.line ? d.line : d.rows != null ? `rows ${d.rows}`
       : d.device_id ? `${d.device_id} seq ${d.max_seq}` : '';
     return `<li data-corr="${e.corr || ''}" class="${hlCorr && e.corr === hlCorr ? 'hl' : ''}"><span class="n">${e.node_id}</span> <span class="k">${e.kind}</span> ${brief}${e.corr ? ` <span class="muted">${e.corr}</span>` : ''}</li>`;
